@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/go-gang/bus"
+	"sync"
 )
 
 type events map[uint32]bus.EventHandler
@@ -57,13 +58,28 @@ func NewEventHandler[Event any](handler genericEventHandlerFunc[Event]) EventHan
 
 func NewEventGroupHandler[Event any](handlers ...genericEventHandlerFunc[Event]) EventHandler {
 	return NewEventHandler(func(ctx context.Context, event *Event) error {
-		errs := make([]error, 0, len(handlers))
+		ctx, cancel := context.WithCancelCause(ctx)
+		defer cancel(nil)
+
+		var wg sync.WaitGroup
+
+		wg.Add(len(handlers))
 
 		for _, handler := range handlers {
-			errs = append(errs, handler(ctx, event))
+			go func() {
+				defer wg.Done()
+
+				if err := handler(ctx, event); err != nil {
+					cancel(err)
+				}
+			}()
 		}
 
-		return errors.Join(errs...)
+		if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
+			return err
+		}
+
+		return nil
 	})
 }
 
