@@ -75,6 +75,8 @@ func NewEventGroupHandler[Event any](handlers ...genericEventHandlerFunc[Event])
 			}()
 		}
 
+		wg.Wait()
+
 		if err := context.Cause(ctx); err != nil && !errors.Is(err, ctx.Err()) {
 			return err
 		}

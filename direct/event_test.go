@@ -6,8 +6,8 @@ import (
 	"github.com/go-gang/bus"
 	"github.com/go-gang/bus/direct"
 	"github.com/go-gang/bus/internal/assert"
-	"sync/atomic"
 	"testing"
+	"time"
 )
 
 type event struct {
@@ -78,21 +78,21 @@ func BenchmarkPublisher(b *testing.B) {
 // goos: linux
 // goarch: amd64
 // cpu: AMD Ryzen 5 6600HS Creator Edition
-// BenchmarkPublisherParallel-12    	44976279	        27.67 ns/op
+// BenchmarkPublisherParallel-12    	 2737003	       510.3 ns/op
 func BenchmarkPublisherParallel(b *testing.B) {
 	type event struct {
-		value uint32
 	}
 
 	handler := direct.NewEventGroupHandler(
 		func(ctx context.Context, event *event) error {
-			atomic.AddUint32(&event.value, 1)
+			time.Sleep(500 * time.Nanosecond)
 
 			return nil
 		},
 
 		func(ctx context.Context, event *event) error {
-			atomic.AddUint32(&event.value, 2)
+
+			time.Sleep(500 * time.Nanosecond)
 
 			return nil
 		},
