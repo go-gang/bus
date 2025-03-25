@@ -14,11 +14,9 @@ type QueryHandler interface {
 	key() [2]uint32
 }
 
-type genericQueryHandlerFunc[Query, Result any] func(ctx context.Context, query *Query, result *Result) error
-
 type genericQueryHandler[Query, Result any] struct {
 	typeHash [2]uint32
-	handler  genericQueryHandlerFunc[Query, Result]
+	handler  func(ctx context.Context, query *Query, result *Result) error
 }
 
 func NewAsker(handlers ...QueryHandler) bus.Asker {
@@ -52,7 +50,7 @@ func (q queries) Ask(ctx context.Context, query, result any) error {
 	return fmt.Errorf("query (%T, %T) %w", query, result, bus.ErrHandlerNotFound)
 }
 
-func NewQueryHandler[Query, Result any](handler genericQueryHandlerFunc[Query, Result]) QueryHandler {
+func NewQueryHandler[Query, Result any](handler func(ctx context.Context, query *Query, result *Result) error) QueryHandler {
 	zeroValueQuery := new(Query)
 	zeroValueResult := new(Result)
 

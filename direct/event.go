@@ -16,11 +16,9 @@ type EventHandler interface {
 	key() uint32
 }
 
-type genericEventHandlerFunc[Event any] func(ctx context.Context, event *Event) error
-
 type genericEventHandler[Event any] struct {
 	typeHash uint32
-	handler  genericEventHandlerFunc[Event]
+	handler  func(ctx context.Context, event *Event) error
 }
 
 func NewPublisher(listeners ...EventHandler) bus.Publisher {
@@ -47,7 +45,7 @@ func (e events) Publish(ctx context.Context, event any) error {
 	return nil
 }
 
-func NewEventHandler[Event any](handler genericEventHandlerFunc[Event]) EventHandler {
+func NewEventHandler[Event any](handler func(ctx context.Context, event *Event) error) EventHandler {
 	zeroValue := new(Event)
 
 	return &genericEventHandler[Event]{
@@ -56,7 +54,7 @@ func NewEventHandler[Event any](handler genericEventHandlerFunc[Event]) EventHan
 	}
 }
 
-func NewEventGroupHandler[Event any](handlers ...genericEventHandlerFunc[Event]) EventHandler {
+func NewEventGroupHandler[Event any](handlers ...func(ctx context.Context, event *Event) error) EventHandler {
 	return NewEventHandler(func(ctx context.Context, event *Event) error {
 		ctx, cancel := context.WithCancelCause(ctx)
 		defer cancel(nil)

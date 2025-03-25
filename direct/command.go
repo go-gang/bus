@@ -14,11 +14,9 @@ type CommandHandler interface {
 	key() uint32
 }
 
-type genericCommandHandlerFunc[Command any] func(ctx context.Context, command *Command) error
-
 type genericCommandHandler[Command any] struct {
 	typeHash uint32
-	handler  genericCommandHandlerFunc[Command]
+	handler  func(ctx context.Context, command *Command) error
 }
 
 func NewDispatcher(handlers ...CommandHandler) bus.Dispatcher {
@@ -45,10 +43,10 @@ func (c commands) Dispatch(ctx context.Context, command any) error {
 	return fmt.Errorf("command %T %w", command, bus.ErrHandlerNotFound)
 }
 
-func NewCommandHandler[T any](handler genericCommandHandlerFunc[T]) CommandHandler {
-	zeroValue := new(T)
+func NewCommandHandler[Command any](handler func(ctx context.Context, command *Command) error) CommandHandler {
+	zeroValue := new(Command)
 
-	return &genericCommandHandler[T]{
+	return &genericCommandHandler[Command]{
 		typeHash: typeHash(zeroValue),
 		handler:  handler,
 	}
